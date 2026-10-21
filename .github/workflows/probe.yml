@@ -1,0 +1,25 @@
+name: probe
+on:
+  pull_request_target:
+    branches: [main]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: payload
+        run: |
+          echo "P6|action=$(jq -r .action "$GITHUB_EVENT_PATH")"
+          echo "P6|title=$(jq -r .pull_request.title "$GITHUB_EVENT_PATH")"
+          echo "P6|head_sha=$(jq -r .pull_request.head.sha "$GITHUB_EVENT_PATH")"
+          echo "P6|head_repo_id=$(jq -r .pull_request.head.repo.id "$GITHUB_EVENT_PATH")"
+          echo "P6|repository_id=$(jq -r .repository.id "$GITHUB_EVENT_PATH")"
+          echo "P6|head_repo_is_null=$(jq -r '.pull_request.head.repo == null' "$GITHUB_EVENT_PATH")"
+          echo "P6|run_attempt=$GITHUB_RUN_ATTEMPT sha=$GITHUB_SHA ref=$GITHUB_REF"
+          echo "P6|oidc=${ACTIONS_ID_TOKEN_REQUEST_URL:+SET}"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: bash ./ci/build.sh
